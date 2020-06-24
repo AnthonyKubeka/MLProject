@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+from pandas import DataFrame
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 
 import nltk
-nltk.download('punkt')
+#nltk.download('punkt')
 from nltk.stem import WordNetLemmatizer
 lemmatizer = WordNetLemmatizer()
 from nltk.tokenize import word_tokenize
@@ -38,36 +38,33 @@ features = ['text', 'title']
 X = reddit_posts_df[features]
 y = reddit_posts_df.target
 
+Y = y.to_numpy().reshape(1693,1)
 #Split arrays or matrices into random train and test subsets (train test split is from sklearn)
 
 
-X_train, X_test, y_train, y_test = train_test_split(X, y,random_state=1,test_size=0.20)
+countVectorizerText = CountVectorizer(stop_words='english')
+countVectorizerTitle = CountVectorizer(stop_words='english')
+cvtext = countVectorizerText.fit_transform(X.text)
+cvtitle = countVectorizerTitle.fit_transform(X.title)
 
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.20, random_state=1)
-#Prep data for usage in the model
+#Build corpus representation
+textArr = cvtext.toarray()
+titleArr = cvtext.toarray()
+print(textArr.shape)
+print(titleArr.shape)
+#combine text and title word count arrays horizontally, so the title for a row
+# is put next to the text of that row
+allArr = np.concatenate((titleArr,textArr), axis=1)
+print(allArr.shape)
+
+#finally, add the class corresponsding to each row as the last column of each row
+corpus_table = np.hstack((allArr,Y))
 
 
-#print(X_train.head(n=3))
-#print(X_train[2:3])
-#print(X_train.loc[1])
-#
-#
-#print('-----------------')
-#
-#
-#print(X_train.text[1130])
+# Model 1: Naive Bayes
 
-
-print('---------------')
-#remove stop words by iterating over text and title features of training data, also tokenizes
-for i in X_train.index:
-    X_train.text[i]=removeStopWords(X_train.text[i])
-    X_train.title[i]=removeStopWords(X_train.title[i])
     
-# Data is now ready for applying models.
-    
-# Model 1: Logistic Regression
-    
-def sigmoid(x):
-    return 1 / (1+np.exp(-x))
+#priors
+
+def prob_count()
 
