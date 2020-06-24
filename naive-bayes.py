@@ -1,4 +1,4 @@
-#TESTFILE
+##ACtual file
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -40,6 +40,7 @@ X = reddit_posts_df[features]
 y = reddit_posts_df.target
 
 # Model 1: Naive Bayes
+#Training the model on the dataset
 #find no of times a word appears in a class
 #CountVectorizer gives Term-Document Matrix for each class (word frequencies appearing in a set of documents i.e. corpus)
 #we compute this  TDM for each class / target. The two classes are 1 = gaming, 0 = pcmasterrace
@@ -93,28 +94,53 @@ tot_features = len(cv.get_feature_names())
 
 tot_features_gaming = count_list_gaming.sum(axis=0)
 tot_features_pcmr = count_list_pcmr.sum(axis=0)
-
-#now run it for one reddit post
-reddit_post = 'What is this video game called? Title' # a gaming post
-reddit_post_list = word_tokenize(reddit_post)
-
-#check if it's gaming or pcmr using laplace smoothing
-prob_gaming_laplace = []
-for word in reddit_post_list:
-    if word in freq_gaming.keys():
-        count = freq_gaming[word]
+#the model has been trained
+def predict_subreddit(new_post):
+    #check if it's gaming or pcmr using laplace smoothing
+    new_post_list = word_tokenize(new_post)
+    prob_gaming_laplace = []
+    for word in new_post_list:
+        if word in freq_gaming.keys():
+            count = freq_gaming[word]
+        else:
+            count = 0
+        prob_gaming_laplace.append((count+1)/(tot_features_gaming+tot_features))
+    
+    #probability that each word is in the gaming class
+    prob_gaming_dict = dict(zip(new_post_list, prob_gaming_laplace))
+    
+    #probability that the post is in the gaming class
+    
+    prob_post_in_gaming = 1
+    for word in new_post_list:
+        prob_post_in_gaming = prob_post_in_gaming*prob_gaming_dict[word]
+        
+    
+    prob_pcmr_laplace = []
+    for word in new_post_list:
+        if word in freq_pcmr.keys():
+            count = freq_pcmr[word]
+        else:
+            count = 0
+        prob_pcmr_laplace.append((count+1)/(tot_features_pcmr+tot_features))
+    
+    prob_pcmr_dict = dict(zip(new_post_list, prob_pcmr_laplace))
+    
+    prob_post_in_pcmr = 1
+    for word in new_post_list:
+        prob_post_in_pcmr = prob_post_in_pcmr*prob_pcmr_dict[word]
+        
+    
+    #now compare probabilities to decide which subreddit the post is in
+    if prob_post_in_gaming > prob_post_in_pcmr:
+        return 'The post is in the gaming subreddit', prob_gaming_laplace
     else:
-        count = 0
-    prob_gaming_laplace.append((count+1)/(tot_features_gaming+tot_features))
-
-#probability that each word is in the gaming class
-prob_gaming_dict = dict(zip(reddit_post_list, prob_gaming_laplace))
-
-#probability that the post is in the gaming class
-
-prob_post_in_gaming = 1
-for word in reddit_post_list:
-    prob_post_in_gaming = prob_post_in_gaming*prob_gaming_dict[word]
+        return 'The post is in the pcmasterrace subreddit', prob_pcmr_laplace
+    
+        
+#now run it for one reddit post
+reddit_post = 'alienware alienware alienware'
+print(predict_subreddit(reddit_post))
 
 
 #now just compare
