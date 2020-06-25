@@ -25,9 +25,20 @@ reddit_posts_df_train = reddit_posts_df[:train_index]
 reddit_posts_df_val = reddit_posts_df[train_index:val_index]
 reddit_posts_df_test = reddit_posts_df[val_index:]
 
-y_train = reddit_posts_df_train.target
+#training set
 reddit_posts_df_train['text'] = reddit_posts_df_train['title'] + ' '+reddit_posts_df_train['text']
 X_train = reddit_posts_df_train['text']
+y_train = reddit_posts_df_train.target
+
+#test set
+reddit_posts_df_test['text'] = reddit_posts_df_test['title'] + ' '+reddit_posts_df_test['text']
+X_test = reddit_posts_df_test['text']
+y_test = reddit_posts_df_test.target
+
+#validation set
+reddit_posts_df_val['text'] = reddit_posts_df_val['title'] + ' '+reddit_posts_df_val['text']
+X_val = reddit_posts_df_val['text']
+y_val = reddit_posts_df_val.target
 
 #prep training data
 gaming_docs  = [row['text'] for index, row in reddit_posts_df_train.iterrows() if row['target']==1]
@@ -83,7 +94,7 @@ def trainNB():
     
     return tot_features, tot_features_pcmr, tot_features_gaming
 
-def predict_subreddit(new_post, tot_features_pcmr, tot_features_gaming, tot_features ):
+def predict_subredditNB(new_post, tot_features_pcmr, tot_features_gaming, tot_features ):
     #check if it's gaming or pcmr using laplace smoothing
     new_post_list = word_tokenize(new_post)
     prob_gaming_laplace = []
@@ -126,7 +137,7 @@ def predict_subreddit(new_post, tot_features_pcmr, tot_features_gaming, tot_feat
         return 'The post is in the pcmasterrace subreddit', prob_pcmr_laplace
 
 tot_features, tot_features_pcmr, tot_features_gaming = trainNB()
-print(predict_subreddit('alienware alienware alienware',tot_features_pcmr,tot_features_gaming,tot_features ))
+print(predict_subredditNB('alienware alienware alienware',tot_features_pcmr,tot_features_gaming,tot_features ))
     
 #2: Logistic Regression
 #setup the data
@@ -176,10 +187,26 @@ def no_of_pcmr_words_in_post(post):
 def h(x, theta):
     return 1 / (1+np.exp(-np.dot(x,theta)))
 
-y_train = y_train.to_numpy()
+y_train_ = y_train.to_numpy()
 
-model_predictions, theta = trainLR(X_train, y_train, 0.1)
+model_predictions, theta = trainLR(X_train, y_train_, 0.1)
 
+def predict_subredditLR(X_predict, y_predict, theta_predict): #whereas naive bayes predict takes in one post, this function takes in a full testing set of posts
+    X = np.zeros((X_predict.shape[0],2))
+    
+    for data_post in range(len(y_predict)):
+        X[data_post][0] = no_of_pcmr_words_in_post(X_predict[data_post+X_predict.keys()[0]])
+        X[data_post][1] = no_of_gaming_words_in_post(X_predict[data_post+X_predict.keys()[0]])
+        
+    design_matrix = np.hstack([np.ones(X.shape[0])[np.newaxis].T, X])
+    X = design_matrix
+    
+    model_predictions = h(X, theta_predict)
+    return model_predictions
 
-pcmr_category = np.where(model_predictions <0.5) #note: these are indices
-gaming_category = np.where(model_predictions >= 0.5)
+pcmr_category_train = np.where(model_predictions <0.5) #note: these are indices
+gaming_category_train = np.where(model_predictions >= 0.5)
+
+test_predictions = predict_subredditLR(X_test, y_test, theta)
+pcmr_category_test = np.where(test_predictions < 0.5)
+gaming_category_test = np.where(test_predictions >= 0.5)

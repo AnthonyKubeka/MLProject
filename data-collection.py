@@ -5,13 +5,12 @@ import time
 import pandas as pd
 import json
 import math
-import seaborn as sns
 
 import warnings
 warnings.simplefilter(action='ignore')
 
 gaming_url = 'https://www.reddit.com/r/gaming/.json'
-headers = {'User-agent': 'Britt Bot 4.0'}
+headers = {'User-agent': 'Tonys Robot'}
 
 #each request returns 25 posts so will need to loop
 gaming_result = requests.get(gaming_url, headers = headers)
